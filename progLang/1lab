@@ -1,0 +1,107 @@
+section .data
+message: db  'hello, world!', 10, 0
+message1: equ  0x16
+section .text
+global _start
+
+exit:
+    mov  rax, 60 ;code 60 =exit
+    xor  rdi, rdi
+    syscall
+
+; function string_length(string_address: rdi) -> str_len: rax
+string_length:
+    
+    xor rax, rax
+  .loop:
+    cmp byte[rdi+rax], 0
+    je .end
+    inc rax
+    jmp .loop
+  .end:
+    ret
+
+; function string_length(string_address: rdi) -> str_len: rax
+print_string:
+    call string_length
+    mov  rsi, rdi
+    mov  rdi, 1
+    mov  rdx, rax
+    mov  rax, 1; code 1 = write
+    syscall
+    ret
+
+
+; Принимает код символа и выводит его в stdout
+print_char:
+    push rdi        ;   rdi -> stack, so rsp addressing to memory, that contains char_code
+    mov rsi, rsp    ; rsp -> rsi, so rdi addressing to memory, that contains char_code
+
+    mov rdx, 1  ; 1 -> rdx (char = 1 byte)
+    mov rax, 1  ; code 1 for write
+    mov rdi, 1  ; 1 -> rdi, descriptor (stdout)
+    syscall
+    pop rdi         ; pop increase rsp, but not clear the char_code
+    ret
+
+print_newline:
+    mov rdi, 0xA
+    push rdi        ;   rdi -> stack, so rsp addressing to memory, that contains char_code
+    mov rsi, rsp    ; rsp -> rsi, so rdi addressing to memory, that contains char_code
+    mov rdx, 1  ; 1 -> rdx (char = 1 byte)
+    mov rax, 1  ; code 1 for write
+    mov rdi, 1  ; 1 -> rdi, descriptor (stdout)
+    syscall
+    pop rdi         ; pop increase rsp, but not clear the char_code
+    ret
+
+; Выводит беззнаковое 8-байтовое число в десятичном формате 
+; Совет: выделите место в стеке и храните там результаты деления
+; Не забудьте перевести цифры в их ASCII коды.
+print_uint:
+    xor rax, rax
+    mov rax, rdi
+
+    ; null terminator
+    dec rsp
+    ;mov [rsp], byte 0
+    
+    xor rcx, rcx
+    mov r9, 10
+    .calc_loop:
+    ; rax = rax / 10; rdx = rdx % 10
+    xor rdx, rdx
+    div r9
+
+    add rdx, '0'
+
+    ; saving result
+    dec rsp
+    mov [rsp], dl ;dl - lower byte rdx
+    
+
+    ; count bytes on stack
+    inc rcx
+
+    ; while rax != 0
+    test rax, rax
+    jne .calc_loop
+
+    mov rdi, rsp    
+    push rcx
+    call print_string
+    pop rcx
+
+    inc rsp
+    add rsp, rcx
+    ret
+
+
+
+_start:
+    mov  rdi, message1
+   ;call print_string
+    ;mov rdi, 0x48
+    call print_uint
+    call print_newline
+    call exit
