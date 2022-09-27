@@ -11,7 +11,6 @@ exit:
 
 ; function string_length(string_address: rdi) -> str_len: rax
 string_length:
-    
     xor rax, rax
   .loop:
     cmp byte[rdi+rax], 0
@@ -23,7 +22,10 @@ string_length:
 
 ; function string_length(string_address: rdi) -> str_len: rax
 print_string:
+    xor rax, rax
     call string_length
+    
+
     mov  rsi, rdi
     mov  rdi, 1
     mov  rdx, rax
@@ -34,6 +36,7 @@ print_string:
 
 ; Принимает код символа и выводит его в stdout
 print_char:
+    xor rax, rax
     push rdi        ;   rdi -> stack, so rsp addressing to memory, that contains char_code
     mov rsi, rsp    ; rsp -> rsi, so rdi addressing to memory, that contains char_code
 
@@ -45,6 +48,7 @@ print_char:
     ret
 
 print_newline:
+    xor rax, rax
     mov rdi, 0xA
     push rdi        ;   rdi -> stack, so rsp addressing to memory, that contains char_code
     mov rsi, rsp    ; rsp -> rsi, so rdi addressing to memory, that contains char_code
@@ -59,49 +63,59 @@ print_newline:
 ; Совет: выделите место в стеке и храните там результаты деления
 ; Не забудьте перевести цифры в их ASCII коды.
 print_uint:
-    xor rax, rax
-    mov rax, rdi
-
-    ; null terminator
-    dec rsp
-    ;mov [rsp], byte 0
-    
+    xor rax, rax    
+    mov rax, rdi; rax - number
     xor rcx, rcx
-    mov r9, 10
+    dec rsp; sdvig sp
+    ;mov [rsp], byte 0
+    mov r8, 10; r8 = 10 CONST
     .calc_loop:
-    ; rax = rax / 10; rdx = rdx % 10
     xor rdx, rdx
-    div r9
-
+    div r8; rax = rax / r8; rdx = rdx % r8
     add rdx, '0'
-
     ; saving result
-    dec rsp
-    mov [rsp], dl ;dl - lower byte rdx
-    
-
+    dec rsp; sdvig sp
+    mov [rsp], dl ;saving dl - lower byte rdx
     ; count bytes on stack
-    inc rcx
-
+    inc rcx; rcx - length
     ; while rax != 0
     test rax, rax
-    jne .calc_loop
-
-    mov rdi, rsp    
+    jne .calc_loop; jump if 0
+    mov rdi, rsp; take last byte
     push rcx
     call print_string
     pop rcx
-
     inc rsp
     add rsp, rcx
     ret
 
+print_int:
+    xor rax, rax
+    cmp rdi, 0
+    jl .neg; jump if rdi < 0
+    jmp print_uint
 
+    .neg:
+    push rdi
+    mov rdi, 45
+    call print_char; print '-'
+    pop rdi
+    neg rdi; rdi
+    call print_uint
+    ret
+
+string_equals:
+    xor rax, rax    ;   0 -> rax, so by default strings not equal
+
+        ret
 
 _start:
-    mov  rdi, message1
    ;call print_string
     ;mov rdi, 0x48
-    call print_uint
+    ;call print_uint
+    ;call print_uint
+    mov rdi, 'zxc'
+    mov rsi, 'zxc'
+    call string_equals
     call print_newline
     call exit
