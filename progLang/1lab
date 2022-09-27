@@ -40,7 +40,7 @@ print_char:
     push rdi        ;   rdi -> stack, so rsp addressing to memory, that contains char_code
     mov rsi, rsp    ; rsp -> rsi, so rdi addressing to memory, that contains char_code
 
-    mov rdx, 1  ; 1 -> rdx (char = 1 byte)
+    mov rdx, 1  ; 1 -> rdx (char = 1 b  yte)
     mov rax, 1  ; code 1 for write
     mov rdi, 1  ; 1 -> rdi, descriptor (stdout)
     syscall
@@ -48,15 +48,14 @@ print_char:
     ret
 
 print_newline:
-    xor rax, rax
-    mov rdi, 0xA
-    push rdi        ;   rdi -> stack, so rsp addressing to memory, that contains char_code
-    mov rsi, rsp    ; rsp -> rsi, so rdi addressing to memory, that contains char_code
-    mov rdx, 1  ; 1 -> rdx (char = 1 byte)
-    mov rax, 1  ; code 1 for write
-    mov rdi, 1  ; 1 -> rdi, descriptor (stdout)
-    syscall
-    pop rdi         ; pop increase rsp, but not clear the char_code
+    mov rdi, 0xa      ; move the new line character to rax
+    call print_char
+        ;mov [rsp+8], rax  ; put this on the stack
+        ;mov rdi, 1      ; file descriptor = stdout
+        ;lea rsi, [rsp+8]  ; buffer = address to write to console
+        ;mov rdx, 1      ; number of bytes to write
+        ;mov rax, 1      ; SYSCALL number for writing to STDOUT
+        ;syscall           ; make the syscall
     ret
 
 ; Выводит беззнаковое 8-байтовое число в десятичном формате 
@@ -105,17 +104,47 @@ print_int:
     ret
 
 string_equals:
-    xor rax, rax    ;   0 -> rax, so by default strings not equal
+    xor rcx, rcx
+    xor rax, rax
+.loop:
+    mov al, [rdi+rcx]
+    cmp al, [rsi+rcx]
+    jne .neq
+    inc rcx
+    test al, al
+    jnz .loop
+    
+    mov rax, 1
+    ret
+.neq:
+    xor rax, rax
+    ret
 
-        ret
+read_char:
+    xor rdi, rdi ; stdin
+    xor rax, rax ; sys_read
+    mov rdx, 1   ; len
+    
+    push 0
+    mov rsi, rsp ; buf
+    syscall
+    pop rax
+    ret 
 
+read_word:
+    
+
+
+    ret
 _start:
    ;call print_string
     ;mov rdi, 0x48
     ;call print_uint
     ;call print_uint
     mov rdi, 'zxc'
-    mov rsi, 'zxc'
-    call string_equals
+    mov rsi, 'zxc1'
+    call read_char
+
+    ;call print_char
     call print_newline
     call exit
