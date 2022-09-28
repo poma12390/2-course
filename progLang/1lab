@@ -131,11 +131,86 @@ read_char:
     pop rax
     ret 
 
+; Принимает: адрес начала буфера, размер буфера
+; Читает в буфер слово из stdin, пропуская пробельные символы в начале, .
+; Пробельные символы это пробел 0x20, табуляция 0x9 и перевод строки 0xA.
+; Останавливается и возвращает 0 если слово слишком большое для буфера
+; При успехе возвращает адрес буфера в rax, длину слова в rdx.
+; При неудаче возвращает 0 в rax
+; Эта функция должна дописывать к слову нуль-терминатор
 read_word:
-    
+    xor rcx, rcx
+    .loop:
+        push rdi
+        push rsi
+        push rcx
+        call read_char
+        pop rcx
+        pop rsi
+        pop rdi
+        cmp rax, 0 
+        jz .exit
+        cmp rcx, rsi
+        jz .end
+        cmp rcx, 0
+        jz .first
+    .char:
+        cmp rax, 0
+        jz .loop
+        cmp rax, 0x20 ; if rax = ' ' -> goto exit
+        jz .exit
+        cmp rax, 0x10 ; if rax = /n -> goto exit
+        jz .exit
+        cmp rax, 0x9    ; if rax = /t -> goto exit
+        jz .exit
+        mov [rdi+rcx], rax
+        inc rcx
+        jmp .loop
+    .first:
+        cmp rax, 0
+        jz .loop
+        cmp rax, 0x20 ; if rax = ' ' -> goto exit
+        jz .loop
+        cmp rax, 0x10 ; if rax = /n -> goto exit
+        jz .loop
+        cmp rax, 0x9 ; if rax = /t -> goto exit
+        jz .loop
+        jmp .char
+    .exit: ; if string is good
+        mov byte[rdi+rcx], 0
+        mov rax, rdi
+        mov rdx, rcx
+        ret
+    .end: ; bufer overflow
+        xor rax, rax
+        ret 
 
 
-    ret
+parse_uint:
+
+  xor rax, rax
+  mov rax, 0
+  mov rcx, 0
+  mov rdx, 0
+
+.loop:
+  mov dl, byte[rdi + rcx]
+  cmp dl, 48 ; goto if dl <48
+  jb .end
+  cmp dl, 58 ; goto if dl > 58
+  ja .end
+
+  sub rdx, 48
+  imul rax, 10
+  add rax, rdx
+  inc rcx
+  jmp .loop
+.end:
+
+  mov rdx, rcx
+  ret
+
+  
 _start:
    ;call print_string
     ;mov rdi, 0x48
